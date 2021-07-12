@@ -271,7 +271,7 @@ func main() {
 
 func usage() {
 	_, _ = fmt.Fprintf(os.Stderr,
-		`Version: 0.1
+		`Version: 0.2
 Usage: compressor [-h] [-c filename]
 
 Options:
