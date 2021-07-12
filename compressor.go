@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-type Config struct {
+type configuration struct {
 	ImageflowTool string `json:"imageflow_tool"`
 	ThreadCount   int    `json:"thread_count"`
 	InputPath     string `json:"input_path"`
@@ -42,11 +42,11 @@ type node struct {
 }
 
 var (
-	ID             string // use unix timestamp as process id
+	id             string // use unix timestamp as process id
 	logger         *log.Logger
-	config         = Config{} // from json
-	total, count   int32      // the number of images
-	failList       []node     // gather all failed jobs for summary
+	config         = configuration{} // from json
+	total, count   int32             // the number of images
+	failList       []node            // gather all failed jobs for summary
 	nodeCh, failCh chan node
 	wg             = sync.WaitGroup{}
 )
@@ -66,11 +66,11 @@ func init() {
 		}
 	}
 
-	// init process ID
-	ID = strconv.FormatInt(time.Now().Unix(), 10)
+	// init process id
+	id = strconv.FormatInt(time.Now().Unix(), 10)
 
 	// create log file and init logger
-	logFile, err := os.OpenFile(ID+".log", os.O_WRONLY|os.O_CREATE, 0755)
+	logFile, err := os.OpenFile(id+".log", os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		logger = log.New(os.Stdout, "", log.LstdFlags)
 		logger.Println("CANNOT CREATE LOG FILE")
@@ -120,7 +120,7 @@ func init() {
 			}
 		}
 	} else {
-		config.OutputPath = config.InputPath + "_" + ID
+		config.OutputPath = config.InputPath + "_" + id
 		if e := os.Mkdir(config.OutputPath, 0755); e != nil {
 			logger.Panicln("OUTPUT PATH AUTO GENERATE FAILED")
 		}
@@ -198,10 +198,10 @@ func compress() {
 			// interface
 			// increment and get (CAS)
 			v := atomic.LoadInt32(&count)
-			for ; !atomic.CompareAndSwapInt32(&count, v, v+1); {
+			for !atomic.CompareAndSwapInt32(&count, v, v+1) {
 				v = atomic.LoadInt32(&count)
 			}
-			logger.Printf("(%d/%d) %s -> %s succeed", v+1, total, j.Input, j.Output)
+			logger.Printf("(%d/%d) %s -> %s", v+1, total, j.Input, j.Output)
 		}
 	}
 
@@ -261,8 +261,7 @@ func summary() {
 		}
 	}
 	logger.Println("Process Complete!")
-	logger.Printf("Total: %d - Success: %d - Fail: %d",
-		total, total-failCount, failCount)
+	logger.Printf("Total: %d - Fail: %d", total, failCount)
 }
 
 func main() {
